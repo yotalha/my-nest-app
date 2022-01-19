@@ -1,35 +1,43 @@
 import { Injectable } from '@nestjs/common';
-import { students } from 'src/db';
-import { v4 as uuid } from 'uuid';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import {
   CreateStudentDto,
   FindStudentResponseDto,
   StudentResponseDto,
   UpdateStudentDto,
 } from './dto/student.dto';
+import { Student, StudentDocument } from './schemas/student.schema';
 
 @Injectable()
 export class StudentService {
-  private students = students;
+  constructor(
+    @InjectModel(Student.name) private studentModel: Model<StudentDocument>,
+  ) {}
 
-  getStudents(): FindStudentResponseDto[] {
-    return this.students;
+  students = null;
+
+  async getStudents(): Promise<Student[]> {
+    return await this.studentModel.find();
   }
 
-  getStudentById(studentId: string): FindStudentResponseDto {
-    return this.students.find((student) => {
-      return student.id === studentId;
-    });
+  async getStudentById(id: string): Promise<Student> {
+    return await this.studentModel.findById(id);
   }
 
-  createStudent(payload: CreateStudentDto): StudentResponseDto {
-    const newStudent = {
-      id: uuid(),
-      ...payload,
-    };
+  // createStudent(payload: CreateStudentDto): StudentResponseDto {
+  //   const newStudent = {
+  //     id: uuid(),
+  //     ...payload,
+  //   };
 
-    this.students.push(newStudent);
-    return newStudent;
+  //   this.students.push(newStudent);
+  //   return newStudent;
+  // }
+
+  async createStudent(payload: CreateStudentDto): Promise<Student> {
+    const createdStudent = new this.studentModel(payload);
+    return createdStudent.save();
   }
 
   updateStudent(payload: UpdateStudentDto, id: string): StudentResponseDto {
